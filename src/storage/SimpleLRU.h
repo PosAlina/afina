@@ -52,11 +52,17 @@ private:
     // i.e all (keys+values) must be less the _max_size
     std::size_t _max_size;
 
+    // Number of bytes stored in this cache now.
+    std::size_t _storage_size;
+
     // Main storage of lru_nodes, elements in this list ordered descending by "freshness": in the head
     // element that wasn't used for longest time.
     //
     // List owns all nodes
     std::unique_ptr<lru_node> _lru_head;
+	
+    // The most unpopular node.
+	lru_node *_lru_last_node;
 
     // Index of nodes from list above, allows fast random access to elements by lru_node#key
     std::map<std::reference_wrapper<std::string>, std::reference_wrapper<lru_node>> _lru_index;

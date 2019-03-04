@@ -3,7 +3,8 @@
 namespace Afina {
 namespace Backend {
 
-bool SimpleLRU::PutNewField(const std::string &key, const std::string &value) {
+// See MapBasedGlobalLockImpl.h
+bool SimpleLRU::PutNewNode(const std::string &key, const std::string &value) {
 	// Delete obsolete fields until there is free space.
 	while (_storage_size + key.size() + value.size() > _max_size)
 		Delete(_lru_last_node->key);
@@ -26,25 +27,30 @@ bool SimpleLRU::PutNewField(const std::string &key, const std::string &value) {
 }
 
 // See MapBasedGlobalLockImpl.h
+bool SimpleLRU::UpdateNode(const std::string &key, const std::string &value) {
+	Delete(key);
+	return PutNewNode(key, value);
+}
+
+// See MapBasedGlobalLockImpl.h
 bool SimpleLRU::Put(const std::string &key, const std::string &value) {
 	if ((key.size() + value.size()) > _max_size) return false; // This pair does not fit in the cache.	
-	if (_lru_index.find(key) != _lru_index.end()) return Set(key, value); // There is already such a key.
-	return PutNewField(key, value);	// There is not such a key.
+	if (_lru_index.find(key) != _lru_index.end()) return UpdateField(key, value); // There is already such a key.
+	return PutNewNode(key, value);	// There is not such a key.
 }
 
 // See MapBasedGlobalLockImpl.h
 bool SimpleLRU::PutIfAbsent(const std::string &key, const std::string &value) {
 	if (_lru_index.find(key) != _lru_index.end()) return false; // There is already such a key.
 	if ((key.size() + value.size()) > _max_size) return false; // This pair does not fit in the cache.
-	return PutNewField(key, value);
+	return PutNewNode(key, value);
 }
 
 // See MapBasedGlobalLockImpl.h
 bool SimpleLRU::Set(const std::string &key, const std::string &value) {
 	if (_lru_index.find(key) == _lru_index.end()) return false; // There is not such a key.
 	if ((key.size() + value.size()) > _max_size) return false; // This pair does not fit in the cache.
-	Delete(key);
-	return PutIfAbsent(key, value);
+	return UpdateNode(key, value);
 }
 
 // See MapBasedGlobalLockImpl.h
@@ -82,7 +88,7 @@ bool SimpleLRU::Get(const std::string &key, std::string &value) { // const
 	auto need_iterator = _lru_index.find(key);
 	if (need_iterator == _lru_index.end()) return false; // There is not such a key.
 	value = need_iterator->second.get().value; // There is such an item.
-	return Set(key, value);	// Move this item on the top.
+	return UpdateNode(key, value);	// Move this item on the top.
 }
 
 } // namespace Backend

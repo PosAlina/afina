@@ -40,6 +40,12 @@ public:
     bool Get(const std::string &key, std::string &value) const override;
 
 private:
+
+    // Auxiliary methods.
+    bool SimpleLRU::PutNewNode(const std::string &key, const std::string &value);
+	
+    bool SimpleLRU::UpdateNode(const std::string &key, const std::string &value);
+
     // LRU cache node
     using lru_node = struct lru_node {
         std::string key;

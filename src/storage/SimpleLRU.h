@@ -42,9 +42,9 @@ public:
 private:
 
     // Auxiliary methods.
-    bool SimpleLRU::PutNewNode(const std::string &key, const std::string &value);
+    bool PutNewNode(const std::string &key, const std::string &value);
 	
-    bool SimpleLRU::UpdateNode(const std::string &key, const std::string &value);
+    bool UpdateNode(const std::string &key, const std::string &value);
 
     // LRU cache node
     using lru_node = struct lru_node {

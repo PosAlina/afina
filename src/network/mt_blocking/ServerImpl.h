@@ -58,7 +58,7 @@ private:
     int _max_acceptors;
     std::mutex _mutex;
     std::conditional_variable _no_workers;
-    void ThreadFunction(int client_socket);
+    void Runner(int client_socket);
 };
 
 } // namespace MTblocking

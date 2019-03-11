@@ -35,6 +35,9 @@ ServerImpl::~ServerImpl() {}
 
 // See Server.h
 void ServerImpl::Start(uint16_t port, uint32_t n_accept, uint32_t n_workers) {
+    _workers_number = 0;
+    _max_workers_number = n_workers;
+    _max_accept = n_accept;
     _logger = pLogging->select("network");
     _logger->info("Start mt_blocking network service");
 
@@ -133,19 +136,89 @@ void ServerImpl::OnRun() {
         }
 
         // TODO: Start new thread and process data from/to connection
-        {
-            static const std::string msg = "TODO: start new thread and process memcached protocol instead";
-            if (send(client_socket, msg.data(), msg.size(), 0) <= 0) {
-                _logger->error("Failed to write response to client: {}", strerror(errno));
-            }
-            close(client_socket);
-        }
+		{
+			std::unique_lock<std::mutex> _lock(_mutex);
+			if (_workers_number < _max_workers_number) {
+				_workers_number++;
+				std::thread(&ServerImpl::Runner, this, client_socket).detach();
+			}
+			else {
+				static const std::string msg = "The limit exceeded";
+				if (send(client_socket, msg.data(), msg.size(), 0) <= 0) {
+					_logger->error("Failed to write response to client: {}", strerror(errno));
+				}
+				close(client_socket);
+			}
+		}
     }
 
     // Cleanup on exit...
     _logger->warn("Network stopped");
 }
 
+void ServerImpl::Runner(int client_socket) {
+	std::size_t arg_remains;
+	Protocol::Parser parser;
+	std::string argument_for_command;
+	std::unique_ptr<Execute::Command> command_to_execute;
+	try {
+		while (running.load()) {
+			int readed_bytes;
+			char client_buffer[4096];
+			while ((readed_bytes = read(client_socket, client_buffer, sizeof(client_buffer))) > 0) {
+				_logger->debug("Got {} bytes from socket", readed_bytes);
+				while (readed_bytes > 0) {
+					_logger->debug("Process {} bytes", readed_bytes);
+					if (!command_to_execute) {
+						std::size_t parsed = 0;
+						if (parser.Parse(client_buffer, readed_bytes, parsed)) {
+							_logger->debug("Found new command: {} in {} bytes", parser.Name(), parsed);
+							command_to_execute = parser.Build(arg_remains);
+							if (arg_remains > 0) arg_remains += 2;
+						}
+						if (parsed == 0) break;
+						else {
+							std::memmove(client_buffer, client_buffer + parsed, readed_bytes - parsed);
+							readed_bytes -= parsed;
+						}
+					}
+					if (command_to_execute && arg_remains > 0) {
+						_logger->debug("Fill argument: {} bytes of {}", readed_bytes, arg_remains);
+						std::size_t to_read = std::min(arg_remains, std::size_t(readed_bytes));
+						argument_for_command.append(client_buffer, to_read);
+						std::memmove(client_buffer, client_buffer + to_read, readed_bytes - to_read);
+						arg_remains -= to_read;
+						readed_bytes -= to_read;
+					}
+					if (command_to_execute && (!arg_remains)) {
+						std::string result;
+						command_to_execute->Execute(*pStorage, argument_for_command, result);
+						result += "\r\n";
+						if (send(client_socket, result.data(), result.size(), 0) <= 0) {
+							throw std::runtime_error("Failed to send response");
+						}
+						command_to_execute.reset();
+						argument_for_command.resize(0);
+						parser.Reset();
+					}
+				}
+			}
+		}
+		if (readed_bytes == 0) {
+			_logger->debug("Connection closed");
+		} else {
+			throw std::runtime_error(std::string(strerror(errno)));
+		}
+	} catch (std::runtime_error &ex) {
+		_logger->error("Failed to process connection on descriptor {}: {}", client_socket, ex.what());
+	}
+	close(client_socket);
+	{
+		std::unique_lock<std::mutex> _lock(_work_mutex);
+		_workers_number--;
+		_no_workers.notify_one();
+	}
+}
 } // namespace MTblocking
 } // namespace Network
 } // namespace Afina

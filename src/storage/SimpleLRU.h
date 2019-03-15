@@ -42,7 +42,7 @@ public:
     bool Delete(const std::string &key) override;
 
     // Implements Afina::Storage interface
-    bool Get(const std::string &key, std::string &value) const override;
+    bool Get(const std::string &key, std::string &value) override; //const
 
 private:
 
@@ -73,7 +73,7 @@ private:
     std::unique_ptr<lru_node> _lru_head;
 	
     // The most unpopular node.
-	lru_node *_lru_last_node;
+    lru_node *_lru_last_node;
 
     // Index of nodes from list above, allows fast random access to elements by lru_node#key
     std::map<std::reference_wrapper<std::string>, std::reference_wrapper<lru_node>> _lru_index;

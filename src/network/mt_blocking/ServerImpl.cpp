@@ -37,7 +37,7 @@ ServerImpl::~ServerImpl() {}
 void ServerImpl::Start(uint16_t port, uint32_t n_accept, uint32_t n_workers) {
     _workers_number = 0;
     _max_workers_number = n_workers;
-    _max_accept = n_accept;
+    _max_accept = n_accept; // What is different between n_workers and n_accept? 
     _logger = pLogging->select("network");
     _logger->info("Start mt_blocking network service");
 

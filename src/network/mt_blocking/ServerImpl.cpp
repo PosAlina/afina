@@ -157,17 +157,23 @@ void ServerImpl::OnRun() {
 }
 
 void ServerImpl::Runner(int client_socket) {
+    // Here is connection state
+    // - parser: parse state of the stream
+    // - command_to_execute: last command parsed out of stream
+    // - arg_remains: how many bytes to read from stream to get command argument
+    // - argument_for_command: buffer stores argument
+    std::size_t arg_remains;
 	std::size_t arg_remains;
 	Protocol::Parser parser;
 	std::string argument_for_command;
 	std::unique_ptr<Execute::Command> command_to_execute;
 	try {
-		while (running.load()) {
-			int readed_bytes;
+		int readed_bytes;
+		while (running.load()) { //Connection
 			char client_buffer[4096];
-			while ((readed_bytes = read(client_socket, client_buffer, sizeof(client_buffer))) > 0) {
-				_logger->debug("Got {} bytes from socket", readed_bytes);
-				while (readed_bytes > 0) {
+			while ((readed_bytes = read(client_socket, client_buffer, sizeof(client_buffer))) > 0) { //Read bytes of client
+				_logger->debug("Got {} bytes from socket", readed_bytes)
+				while (readed_bytes > 0) { // Processed readed bytes
 					_logger->debug("Process {} bytes", readed_bytes);
 					if (!command_to_execute) {
 						std::size_t parsed = 0;

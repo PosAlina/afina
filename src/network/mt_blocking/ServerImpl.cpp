@@ -230,8 +230,8 @@ void ServerImpl::Runner(int client_socket) {
 						command_to_execute.reset();
 						argument_for_command.resize(0);
 						parser.Reset();
-					} // while (readed_bytes)
-				}
+					}
+				} // while (readed_bytes)
 			}
 			if (readed_bytes == 0) {
 				_logger->debug("Connection closed");

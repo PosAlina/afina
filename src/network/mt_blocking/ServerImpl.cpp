@@ -140,9 +140,9 @@ void ServerImpl::OnRun() {
 			std::unique_lock<std::mutex> _lock(_mutex);
 			if (_workers_number < _max_workers_number) {
 				_workers_number++;
-				std::thread(&ServerImpl::Runner, this, client_socket).detach();
+				std::thread(&ServerImpl::Runner, this, client_socket).detach(); // A new thread is created, and the calling thread is not blocked
 			}
-			else {
+			else { // The limit is exceeded, so we send a message to the client about it and close the connection.
 				static const std::string msg = "The limit exceeded";
 				if (send(client_socket, msg.data(), msg.size(), 0) <= 0) {
 					_logger->error("Failed to write response to client: {}", strerror(errno));

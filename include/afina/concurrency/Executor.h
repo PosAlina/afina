@@ -28,8 +28,12 @@ class Executor {
         kStopped
     };
 
-    Executor(std::string name, int size);
-    ~Executor();
+    Executor(std::string name, int size, int lower = 0, int higher = 10, int time = 100)
+        : max_queue_size(size),
+          lower_watermark(lower),
+          higher_watermark(higher),
+          idle_time(time) {}
+    ~Executor() {}
 
     /**
      * Signal thread pool to stop, it will stop accepting new jobs and close threads just after each become
@@ -82,6 +86,16 @@ private:
      * Conditional variable to await new data in case of empty queue
      */
     std::condition_variable empty_condition;
+    
+      /**
+     * Conditional variable to await finish all threads
+     */
+    std::condition_variable stop_condition;
+    
+    const int low_watermark;
+    const int hight_watermark;
+    const int max_queue_size;
+    const int idle_time;
 
     /**
      * Vector of actual threads that perorm execution

@@ -161,8 +161,7 @@ void ServerImpl::Runner(int client_socket) {
     // - parser: parse state of the stream
     // - command_to_execute: last command parsed out of stream
     // - arg_remains: how many bytes to read from stream to get command argument
-    // - argument_for_command: buffer stores argument
-    std::size_t arg_remains;
+    // - argument_for_command: buffer stores argument\
 	std::size_t arg_remains;
 	Protocol::Parser parser;
 	std::string argument_for_command;

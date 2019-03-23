@@ -245,7 +245,7 @@ void ServerImpl::Runner(int client_socket) {
         // We are done with this connection
 	close(client_socket);
 	{
-		std::unique_lock<std::mutex> _lock(_work_mutex);
+		std::unique_lock<std::mutex> _lock(_mutex);
 		_workers_number--;
 		_no_workers.notify_one();
 	}

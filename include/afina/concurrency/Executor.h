@@ -32,7 +32,8 @@ class Executor {
         : max_queue_size(size),
           lower_watermark(lower),
           higher_watermark(higher),
-          idle_time(time) {}
+          idle_time(time),
+          free_threads(0) {}
     ~Executor() {}
 
     /**
@@ -96,6 +97,7 @@ private:
     const int hight_watermark;
     const int max_queue_size;
     const int idle_time;
+    int free_threads;
 
     /**
      * Vector of actual threads that perorm execution

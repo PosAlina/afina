@@ -15,7 +15,7 @@ void perform(Executor *executor) {
 	while (executor->state == Executor::State::kRun) {
 		std::unique_lock<std::mutex> lock(executor->mutex);
 		auto run_time = std::chrono::system_clock::now() + std::chrono::milliseconds(executor->idle_time);
-		while ((executor->tate == Executor::State::kRun) && executor->tasks.empty()) { // Wait
+		while ((executor->state == Executor::State::kRun) && executor->tasks.empty()) { // Wait
 			executor->free_threads++;
 			if ((executor->empty_condition.wait_until(lock, run_time) == std::cv_status::timeout) &&
 				(executor->threads.size() > executor->low_watermark)) {

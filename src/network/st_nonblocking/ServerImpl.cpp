@@ -91,12 +91,20 @@ void ServerImpl::Stop() {
     if (eventfd_write(_event_fd, 1)) {
         throw std::runtime_error("Failed to wakeup workers");
     }
+
+    for (auto pc : _connections) {
+        close(pc->_socket);
+        pc->OnClose();
+        _connections.erase(pc);
+    }
+    close(_server_socket);
 }
 
 // See Server.h
 void ServerImpl::Join() {
     // Wait for work to be complete
     _work_thread.join();
+    close(_server_socket);
 }
 
 // See ServerImpl.h
@@ -164,6 +172,7 @@ void ServerImpl::OnRun() {
 
                 close(pc->_socket);
                 pc->OnClose();
+                _connections.erase(pc);
 
                 delete pc;
             } else if (pc->_event.events != old_mask) {
@@ -172,6 +181,7 @@ void ServerImpl::OnRun() {
 
                     close(pc->_socket);
                     pc->OnClose();
+                    _connections.erase(pc);
 
                     delete pc;
                 }
@@ -211,12 +221,15 @@ void ServerImpl::OnNewConnection(int epoll_descr) {
         if (pc == nullptr) {
             throw std::runtime_error("Failed to allocate connection");
         }
+        _connections.emplace_back(infd);
 
         // Register connection in worker's epoll
         pc->Start();
         if (pc->isAlive()) {
             if (epoll_ctl(epoll_descr, EPOLL_CTL_ADD, pc->_socket, &pc->_event)) {
                 pc->OnError();
+                close(pc->socket);
+                _connections.pop_back();
                 delete pc;
             }
         }

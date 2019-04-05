@@ -49,7 +49,13 @@ private:
     // Auxiliary methods.
     bool PutNewNode(const std::string &key, const std::string &value);
 	
-    bool UpdateNode(const std::string &key, const std::string &value);
+    bool UpdateNode(const std::string &value, lru_node *need_node);
+
+    bool DeleteLastNode();
+
+    bool MoveNode(lru_node *need_node);
+
+
 
     // LRU cache node
     using lru_node = struct lru_node {

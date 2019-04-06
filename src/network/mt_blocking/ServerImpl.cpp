@@ -82,6 +82,8 @@ void ServerImpl::Start(uint16_t port, uint32_t n_accept, uint32_t n_workers) {
 // See Server.h
 void ServerImpl::Stop() {
     running.store(false);
+    std::unique_lock<std::mutex> _lock(_mutex);
+    while (_workers_number) _no_workers.wait(_lock);
     shutdown(_server_socket, SHUT_RDWR);
 }
 

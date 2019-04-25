@@ -46,17 +46,6 @@ public:
 
 private:
 
-    // Auxiliary methods.
-    bool PutNewNode(const std::string &key, const std::string &value);
-	
-    bool UpdateNode(const std::string &value, lru_node *need_node);
-
-    bool DeleteLastNode();
-
-    bool MoveNode(lru_node *need_node);
-
-
-
     // LRU cache node
     using lru_node = struct lru_node {
         const std::string key;
@@ -82,7 +71,16 @@ private:
     lru_node *_lru_last_node;
 
     // Index of nodes from list above, allows fast random access to elements by lru_node#key
-    std::map<std::reference_wrapper<const std::string>, std::reference_wrapper<lru_node>> _lru_index;
+    std::map<std::reference_wrapper<const std::string>, std::reference_wrapper<lru_node>, std::less<std::string>> _lru_index;
+
+    // Auxiliary methods.
+    bool PutNewNode(const std::string &key, const std::string &value);
+	
+    bool UpdateNode(const std::string &value, lru_node *need_node);
+
+    bool DeleteLastNode();
+
+    bool MoveNode(lru_node *need_node);
 };
 
 } // namespace Backend

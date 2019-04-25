@@ -121,7 +121,7 @@ bool SimpleLRU::MoveNode(lru_node *need_node) {
 			_lru_last_node = need_node->prev;
 			_lru_last_node->next = nullptr;
 		}
-		else need_node->next->prev = std::move(need->prev); // This node in the middle of the query
+		else need_node->next->prev = std::move(need_node->prev); // This node in the middle of the query
 		need_node->prev->next = std::move(need_node->next);
 		need_node->prev = nullptr;
 		need_node->next = std::move(_lru_head);
@@ -135,7 +135,7 @@ bool SimpleLRU::UpdateNode(const std::string &value, lru_node *need_node) {
 	// Delete obsolete fields until there is free space.
 	while ((_storage_size + value.size() - (need_node->value).size()) > _max_size)
 		DeleteLastNode();
-	_storage_size += value.size() - (need_node->value).size()e;
+	_storage_size += value.size() - (need_node->value).size();
 	need_node->value = value;
 	return true;
 }
